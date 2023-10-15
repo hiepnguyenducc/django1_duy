@@ -47,7 +47,6 @@ def post_list(request):
 
 
 # Tâm An
-@login_required
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
     comments = Comment.objects.all().filter(post = pk)
@@ -239,7 +238,7 @@ def user_login(request):
         if user:
             login(request, user)
             posts = Post.objects.filter(updated_at__isnull=False, status = "0").order_by('-updated_at')
-            return render(request,'post_list.html',{'user': user, 'posts': posts} )
+            return redirect('post_list')
         else:
             return redirect('user_login')
     else:
