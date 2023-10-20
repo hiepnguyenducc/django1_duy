@@ -10,6 +10,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from .forms import CommentForm, PostForm
 from django.views import generic
 from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden
 
 from django.views.generic.edit import CreateView,DeleteView,UpdateView
 from blog.forms import UserForm,UserProfileForm
@@ -19,6 +20,10 @@ from django.contrib.auth import authenticate,login,logout
 from django.http import HttpResponse,HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+
+#import for email
+from django.core.mail import send_mail
+from django.conf import settings
 
 # View to display a list of all posts
 # @staff_member_required
@@ -32,8 +37,8 @@ def post_list(request):
         post.save()
         return redirect('post_list')
     # Tâm An, sửa lỗi
-    for post in posts:
-        post.thumbnail = str(post.thumbnail).split('/')[-1]
+    # for post in posts:
+    #     post.thumbnail = str(post.thumbnail).split('/')[-1]
     return render(request, 'post_list.html', {'posts': posts})
 # def post_list(request):
 #     posts = Post.objects.filter(updated_at__isnull=False).order_by('-updated_at')
@@ -155,8 +160,8 @@ def draft_list(request):
     drafts = Post.objects.filter(updated_at__isnull=False, status = "1").order_by('-updated_at')
     # Rendering the template draft_list.html with the drafts data
     print(drafts)
-    for post in drafts:
-        post.thumbnail = str(post.thumbnail).split('/')[-1]
+    # for post in drafts:
+    #     post.thumbnail = str(post.thumbnail).split('/')[-1]
     return render(request, 'draft_list.html', {'drafts': drafts})
 # def draft_list(request):
 #     # Query to get all draft posts from the database, ordered by creation date in descending order
@@ -204,29 +209,20 @@ def user_logout(request):
     return redirect('post_list')
     
 def register(request):
-    registered = False
     if request.method == 'POST':
         user_form = UserForm(data=request.POST)
         profile_form = UserProfileForm(data=request.POST)
 
-        if user_form.is_valid() and profile_form.is_valid() :
-            user =  user_form.save()
-            user.password = user.password
-            user.save()
-            profile = profile_form.save(commit=False)
-            profile.user = user
-
-            # if 'profile_pic' in request.FILES:
-            #     profile.profile_pic = request.FILES['profile_pic']
-            profile_pic = '8106194_cover-intel-socket-lga-1851-tinhte.jpg'
-            profile.save()
-            registered = True
-        else:
-            print(user_form.errors,profile_form.errors)
+        if request.method == "POST":
+            form = UserForm(request.POST)
+            if form.is_valid():
+                form.save()
+            else:
+                print(user_form.errors,profile_form.errors)
     else:
         user_form = UserForm()
         profile_form = UserProfileForm()
-    return render(request,'registration.html',{'user_form': user_form,'profile_form': profile_form ,'registered':registered   } )
+    return render(request,'registration.html',{'user_form': user_form,'profile_form': profile_form   } )
 # Tâm An
 def user_login(request):
     if request.method == "POST":
@@ -238,6 +234,8 @@ def user_login(request):
         if user:
             login(request, user)
             posts = Post.objects.filter(updated_at__isnull=False, status = "0").order_by('-updated_at')
+            # for i in posts:
+            #    i.thumbnail = str(i.thumbnail).split('/')[-1] 
             return redirect('post_list')
         else:
             return redirect('user_login')
@@ -285,9 +283,8 @@ class CreateNewPost(CreateView):
         obj.thumbnail = '4572202_cover_home_air_force_one.jpg'
         obj.updated_at = timezone.now()
         obj.comments = 0
-        obj.likes = 0
         obj.views = 0
-        obj.thumbnail = '8101948_Cover-iphone-15-pro-max-co-the-chiem-3540-lo-hang-iphone-moi-tinhte-tuanhtran.jpg'
+        obj.thumbnail = '8107828_CV.jpg'
         obj.save()
         return super().form_valid(form)
 
@@ -336,6 +333,38 @@ def search_post(request):
     # print(request.POST)
     search_data = request.POST.get('search_title')
     qd = Post.objects.filter(status='0', title__contains = search_data)
-    for post in qd:
-        post.thumbnail = str(post.thumbnail).split('/')[-1]
+    # for post in qd:
+    #     post.thumbnail = str(post.thumbnail).split('/')[-1]
     return render(request, 'search.html',{'posts': qd, 'search_title': search_data})
+
+# Duy: Edit comments
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    if not comment.can_edit(request.user):
+        return HttpResponseForbidden()
+    if request.method == "POST":
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('post_detail', pk=comment.post.pk)
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'edit_comment.html', {'form': form})
+
+def send_email(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+        # Gửi email
+        send_mail(
+            'Chào bạn, cảm ơn đã liên hệ với Django.tdc',
+            message,
+            settings.EMAIL_HOST_USER,
+            [email],
+        )
+
+        print("Thanks")
+        return redirect('post_list')
+
+    return redirect('post_list')

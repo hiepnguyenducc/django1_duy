@@ -8,6 +8,7 @@
 </head>
 
 <body>
+    
     <div class="search">
         {% extends "base_generic.html" %} {% block content %}
         {% comment %} Tìm kiếm title {% endcomment %}
@@ -27,14 +28,14 @@
             {% for post in posts %}
             {% load static %}
             <div class="post">
-                <img src="static/images/{{ post.thumbnail }}" alt="{{ post.title }}" class="slider-image">
-                {% comment %} <img src="{{ post.thumbnail }}" alt="{{ post.title }}" class="slider-image"> {% endcomment %}
+                <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="slider-image">
                 <div class="post-info">
                     <p ><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></p>
-                    <i class="far fa-user"><span> {{ post.author.fullname }}</span></i>
+                    <i class="far fa-user"><span> {{ post.author }}</span></i>
                     &nbsp;
                 </div>
             </div>
+            
             {% endfor %}
         </div>
     </div>
@@ -43,13 +44,14 @@
             <h1 class="recent-post-title">
                 Recent Post
             </h1>
+
             {% for post in posts %}
             {% load static %}
             <div class="post">
-                <img src="static/images/{{ post.thumbnail }}" alt="{{ post.title }}" class="post-image">
+                <img src="{{ post.thumbnail.url }}" alt="{{ post.title }}" class="post-image">
                 <div class="post-preview">
                     <h2><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h2>
-                    <i class="far fa-user"> <span>{{post.author.fullname}}</span></i>
+                    <i class="far fa-user"> <span>{{post.author}}</span></i>
                     &nbsp;
                     <a href="{% url 'post_detail' pk=post.pk %}" class="btn read-more">Read More</a>
                 </div>

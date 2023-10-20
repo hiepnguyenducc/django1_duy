@@ -14,7 +14,7 @@
     <li>
         
     
-        <img src="/static/images/{{ draft.thumbnail }}" alt="{{ post.title }}" width="400px">
+        <img src="{{ draft.thumbnail.url }}" alt="{{ post.title }}" width="400px">
         <a href="{% url 'post_detail' pk=draft.pk %}">{{ draft.title }}</a>
 
 
